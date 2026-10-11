@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcriptor de Paraclínicos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: fixed;
+            z-index: 50;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        body {
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans p-4 md:p-6 flex flex-col">
+
+    <div class="max-w-6xl mx-auto w-full h-full flex flex-col">
+        <div class="flex flex-col md:flex-row justify-between items-center md:items-end mb-4 gap-4 flex-none">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-700 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Transcriptor de Paraclínicos
+            </h1>
+            <div class="flex flex-col items-center md:items-end gap-2">
+                <div class="text-lg md:text-xl font-bold text-blue-800 bg-white px-4 md:px-6 py-2 md:py-3 rounded-xl shadow-sm border border-blue-100 text-center md:text-right">
+                    Creado por: Juan Esteban Herrera<br>
+                    <span class="text-base md:text-lg font-medium text-slate-500">Medicina Interna PUJ</span>
+                </div>
+
+                <div class="relative">
+                    <button id="tfg-btn" onclick="toggleTFGPanel()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-semibold shadow transition text-sm md:text-base">
+                        Tasa de filtración glomerular
+                    </button>
+                    <div id="tfg-panel" class="hidden absolute right-0 mt-2 z-20 bg-white border border-slate-200 rounded-xl shadow-lg p-4 w-64 text-left">
+                        <div class="mb-3">
+                            <label for="tfg-sexo" class="block text-sm font-semibold text-slate-600 mb-1">Sexo</label>
+                            <select id="tfg-sexo" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm">
+                                <option value="M">Masculino</option>
+                                <option value="F">Femenino</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tfg-edad" class="block text-sm font-semibold text-slate-600 mb-1">Edad</label>
+                            <input id="tfg-edad" type="number" min="0" max="120" class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm" placeholder="Años">
+                        </div>
+                        <div class="flex justify-center">
+                            <button onclick="confirmarTFG()" title="Confirmar" class="bg-emerald-500 hover:bg-emerald-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-4 md:p-6 flex-1 flex flex-col min-h-0">
+            
+            <div class="flex flex-col flex-1 min-h-0">
+                <label for="input-text" class="block text-lg md:text-xl font-bold text-slate-700 mb-2">Pega aquí el reporte de SAHI</label>
+                <textarea id="input-text" class="w-full flex-1 p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-xs md:text-sm resize-none shadow-inner overflow-y-auto" placeholder="Pega el contenido aquí..."></textarea>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-3 my-4 bg-slate-50 p-4 rounded-xl border border-slate-100 flex-none">
+                <button onclick="pegarTexto()" class="w-32 md:w-40 bg-blue-600 hover:bg-blue-700 text-white py-2 md:py-3 rounded-lg font-semibold shadow transition flex items-center justify-center gap-2 text-sm md:text-base">
+                    Pegar
+                </button>
+                
+                <button onclick="ordenarTexto()" class="w-32 md:w-40 bg-green-600 hover:bg-green-700 text-white py-2 md:py-3 rounded-lg font-bold shadow-lg transition flex items-center justify-center gap-2 transform hover:scale-105 ring-2 ring-green-300 ring-offset-2 text-sm md:text-base">
+                    Ordenar
+                </button>
+
+                <button onclick="copiarTexto()" class="w-32 md:w-40 bg-yellow-500 hover:bg-yellow-600 text-white py-2 md:py-3 rounded-lg font-semibold shadow transition flex items-center justify-center gap-2 text-sm md:text-base">
+                    Copiar
+                </button>
+
+                <button onclick="borrarTodo()" class="w-32 md:w-40 bg-red-500 hover:bg-red-600 text-white py-2 md:py-3 rounded-lg font-semibold shadow transition flex items-center justify-center gap-2 text-sm md:text-base">
+                    Borrar todo
+                </button>
+            </div>
+
+            <div class="flex flex-col flex-1 min-h-0">
+                <label for="output-text" class="block text-lg md:text-xl font-bold text-slate-700 mb-2">Reporte ordenado</label>
+                <textarea id="output-text" readonly class="w-full flex-1 p-3 border border-slate-300 rounded-xl bg-slate-50 font-mono text-xs md:text-sm resize-none overflow-y-auto" placeholder="El resultado aparecerá aquí..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast">Notificación</div>
+
+    <script>
+        function showToast(message, isError = false) {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.style.backgroundColor = isError ? "#ef4444" : "#10b981";
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        async function pegarTexto() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('input-text').value = text;
+                showToast("Texto pegado");
+            } catch (err) {
+                showToast("Usa Ctrl+V", true);
+            }
+        }
+
+        function copiarTexto() {
+            const outputText = document.getElementById('output-text');
+            if (!outputText.value.trim()) return;
+            outputText.select();
+            document.execCommand('copy');
+            showToast("¡Copiado!");
+        }
+
+        // ---- Tasa de filtración glomerular (CKD-EPI 2021 creatinina) ----
+        let tfgData = { sexo: null, edad: null, confirmado: false };
+
+        function toggleTFGPanel() {
+            document.getElementById('tfg-panel').classList.toggle('hidden');
+        }
+
+        function confirmarTFG() {
+            const sexo = document.getElementById('tfg-sexo').value;
+            const edadRaw = document.getElementById('tfg-edad').value;
+            const edad = parseFloat(edadRaw.toString().replace(',', '.'));
+
+            if (!edadRaw || isNaN(edad) || edad <= 0) {
+                showToast("Ingresa una edad válida", true);
+                return;
+            }
+
+            tfgData = { sexo: sexo, edad: edad, confirmado: true };
+            document.getElementById('tfg-panel').classList.add('hidden');
+
+            const btn = document.getElementById('tfg-btn');
+            btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+            btn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            showToast("Datos para TFG guardados");
+        }
+
+        // Ecuación CKD-EPI 2021 (sin coeficiente racial), creatinina en mg/dL
+        function calcularCKDEPI(creatinina, sexo, edad) {
+            const esFemenino = sexo === 'F';
+            const k = esFemenino ? 0.7 : 0.9;
+            const alfa = esFemenino ? -0.241 : -0.302;
+
+            const minRatio = Math.min(creatinina / k, 1);
+            const maxRatio = Math.max(creatinina / k, 1);
+
+            let egfr = 142 * Math.pow(minRatio, alfa) * Math.pow(maxRatio, -1.200) * Math.pow(0.9938, edad);
+            if (esFemenino) egfr *= 1.012;
+
+            return Math.round(egfr);
+        }
+
+        function borrarTodo() {
+            document.getElementById('input-text').value = "";
+            document.getElementById('output-text').value = "";
+
+            // Reiniciar también los datos de la calculadora de TFG
+            tfgData = { sexo: null, edad: null, confirmado: false };
+            document.getElementById('tfg-sexo').value = 'M';
+            document.getElementById('tfg-edad').value = '';
+            document.getElementById('tfg-panel').classList.add('hidden');
+
+            const btn = document.getElementById('tfg-btn');
+            btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            btn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+        }
+
+        function toTitleCase(str) {
+            return str.toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase());
+        }
+
+        function formatHemoValue(key, value) {
+            if (!value) return '-';
+            const cleanValue = parseFloat(value.toString().replace(',', '.').replace(/[^\d.]/g, ''));
+            if (isNaN(cleanValue)) return value;
+
+            const toMultiply = ["Leucos", "Neu", "Linf", "Mono", "Eos", "Baso"];
+            if (toMultiply.includes(key)) return Math.round(cleanValue * 1000).toString();
+            if (key === "Plaquetas") return cleanValue.toString().includes('.') ? Math.round(cleanValue * 1000).toString() : cleanValue.toString() + ".000";
+            if (key === "RDW") return cleanValue.toString() + "%";
+            return cleanValue.toString();
+        }
+
+        function ordenarTexto() {
+            const rawText = document.getElementById('input-text').value;
+            if (!rawText.trim()) return showToast("Entrada vacía", true);
+
+            const lines = rawText.split('\n');
+            const dataByDate = {};
+            let currentDateStr = "Fecha no especificada";
+            let currentStudy = "";
+            
+            let pendingItem = null;
+            let pendingResult = false;
+            let microBlockActive = false;
+            let currentMicroData = [];
+            let sedimentoActive = false;
+            let sedimentoLines = [];
+            let specialBlockActive = false;
+            let specialBlockName = "";
+            let specialBlockDate = "";
+            let specialBlockLines = [];
+            let specialBlockDateFound = false;
+            let pendingHIVValue = null;
+            let hivRangesLines = [];
+            let hivCapturingRanges = false;
+            let frotisActive = false;
+            let frotisLines = [];
+            let frotisCapturingContent = false;
+            // Formato 2: frotis que viene con ** FROTIS DE SANGRE PERIFERICA (contexto HEMATOLOGIA)
+            let frotis2Active = false;
+            let frotis2Lines = [];
+            let frotis2CapturingResult = false;
+            // Sedimento urinario en formato tabular (Estudio:SEDIMENTO URINARIO AUT)
+            let sedimentoTabularActive = false;
+            let sedimentoTabularLines = [];
+            // Tras un ítem simple (ej. TSH) cuya línea ">Valores de Ref.:" viene vacía, algunos
+            // reportes LABCORE agregan debajo una tabla de rangos por edad y/o una nota de
+            // actualización de rango. Esas líneas no tienen ">" ni palabras clave reconocidas,
+            // así que sin este flag terminan "colándose" como si fueran ítems nuevos.
+            let refTableActive = false;
+            // Algunos estudios simples en formato tabular (no LABCORE ">Resultado:"), como
+            // ALCOHOL ETILICO, agregan debajo del resultado un párrafo de interpretación
+            // diagnóstica. Ese texto libre a veces trae doble espacio interno, lo que lo hace
+            // parecer una fila de 2 columnas más y termina "colándose" como si fuera un ítem
+            // nuevo. Tras capturar ETANOL, se ignora todo hasta el siguiente límite claro.
+            let postEtanolActive = false;
+
+            const hemoMap = {
+                "RECUENTO DE BLANCOS": "Leucos", "RECUENTO DE LEUCOCITOS": "Leucos",
+                "NEUTROFILOS": "Neu", "LINFOCITOS": "Linf", "MONOCITOS": "Mono",
+                "EOSINOFILOS": "Eos", "BASOFILOS": "Baso", "HEMOGLOBINA": "Hemoglobina",
+                "HEMATOCRITO": "HCTO", "MCV": "VCM", "MCH": "HCM", "MCHC": "CHCM",
+                "RDW CV": "RDW", "RDW-CV": "RDW",
+                "PLAQUETAS": "Plaquetas", "RECUENTO DE PLAQUETAS": "Plaquetas"
+            };
+
+            const gasesMap = {
+                "PH ARTERIAL": "pH", "PCO2 ARTERIAL": "pCO2", "PO2 ARTERIAL": "pO2",
+                "HCO3 ARTERIAL": "HCO3", "HCO3 (C)": "HCO3_C", "HCO3 STD": "HCO3_STD", "HCO3": "HCO3",
+                "BE(ECF) ARTERIAL": "BE", "BE(B) ARTERIAL": "BE_B",
+                "FIO2 ARTERIAL": "FIO2"
+            };
+
+            // Gases venosos: en SAHI a veces vienen bajo un encabezado "Estudio: GASES ARTERIALES"
+            // aunque los parámetros individuales digan "VENOSO" (ej. "PH VENOSO"). Por eso no nos
+            // fiamos del encabezado de sección para distinguir arterial de venoso, sino del nombre
+            // de cada parámetro individual.
+            const gasesVenosoMap = {
+                "PH VENOSO": "pH", "PCO2 VENOSO": "pCO2", "PO2 VENOSO": "pO2",
+                "HCO3 VENOSO": "HCO3", "HCO3 VENOSO (C)": "HCO3_C", "HCO3 VENOSO STD": "HCO3_STD",
+                "BEECF VENOSO": "BE", "BE(ECF) VENOSO": "BE", "BE(B) VENOSO": "BE_B",
+                "FIO2 VENOSO": "FIO2", "FIO2 VENOSOS": "FIO2"
+            };
+
+            const nameAlias = {
+                "PRO BNP ARCHITEC": "ProBNP", "PRO BNP": "ProBNP",
+                "BILIRRUBINA TOTAL ARCHITEC": "Bilirrubina Total", "BILIRRUBINA TOTAL AR": "Bilirrubina Total", "BILIRRUBINA TOTAL": "Bilirrubina Total",
+                "BILIRRUBINA DIRECTA": "Bilirrubina Directa",
+                "BILIRRUBINA INDIRECT": "Bilirrubina Indirecta", "BILIRRUBINA INDIRECTA": "Bilirrubina Indirecta",
+                "ASPARTO AMINO TRANSFERRASA (TGO).": "AST", "ASPARTO AMINO TRANSFERRASA (TGO)": "AST", "ASPARTATO AMINO TRANSFERASA": "AST", "ASPARTO AMINO TRANSF": "AST",
+                "ALANINO AMINO TRANSFERRASA (TGP)": "ALT", "ALANINO AMINO TRANSFERASA": "ALT", "ALANINO AMINO TRANSF": "ALT",
+                "FOSFATASA ALCALINA": "Fosfatasa Alcalina",
+                "GAMMA GLUTAMIL TRANSFERASA": "GGT", "GAMMA GLUTAMIL": "GGT",
+                "PROTEINA C REACTIVA": "PCR",
+                "TSH HORMONA ESTIMULANTE DEL TIROIDES": "TSH", "TSH": "TSH",
+                "SARS COV 2 [COVID-19": "SARS-CoV-2 Ag",
+                "CREATININA EN SUERO U OTROS FLUIDOS": "Creatinina", "CREATININA": "Creatinina",
+                "NITROGENO UREICO (BUN)": "BUN", "NITROGENO UREICO": "BUN", "BUN": "BUN",
+                "SODIO": "Sodio", "POTASIO": "Potasio", "CLORO": "Cloro", 
+                "MAGNESIO": "Magnesio", "CALCIO": "Calcio", "FOSFORO": "Fosforo",
+                "HTLV I+II ANTICUERPOS": "Anticuerpos HTLV",
+                "HIV": "VIH",
+                // Panel de uroanálisis (el LIS exporta estos nombres sin tildes)
+                "PH": "pH", "PROTEINAS": "Proteínas", "GLUCOSA EN ORINA": "Glucosa en orina",
+                "CUERPOS CETONICOS": "Cuerpos cetónicos", "UROBILINOGENO": "Urobilinógeno",
+                "ACIDO ASCORBICO": "Ácido ascórbico",
+                // Sedimento urinario
+                "URATOS AMORFOS": "Uratos amorfos", "CELULAS ESCAMOSAS": "Células escamosas"
+            };
+
+            // Resuelve el nombre de un ítem de sedimento urinario usando el mismo diccionario
+            // de alias (tildes correctas) y solo cae a title-case genérico si no está mapeado.
+            function formatUroName(raw) {
+                const upper = raw.toUpperCase().trim();
+                return nameAlias[upper] || toTitleCase(raw);
+            }
+
+            const hepNames = ["Bilirrubina Total", "Bilirrubina Directa", "Bilirrubina Indirecta", "Fosfatasa Alcalina", "AST", "ALT", "GGT"];
+
+            const ignoreCoag = ["CONTROL DIA PTINR"];
+            const coagMap = {
+                "TIEMPO DE PROTROMBINA": "PT", "TIEMPO DE PROTROMBIN": "PT",
+                "TIEMPO DE TROMBOPLASTINA": "PTT", "TIEMPO PARCIAL DE TROMBOPLASTINA": "PTT", "TIEMPO DE TROMBOPLAS": "PTT",
+                "INR": "INR"
+            };
+
+            const ignoreClinical = [
+                "RECUENTO DE ROJOS", "RDW-SD", "RDW SD", "MPV", "PDW", "PCT", "PLAQUETOCRITO",
+                "IMG", "GRANULOCITOS", "NRBC", "ERITROCITOS NUCLEADOS",
+                "HISTOGRAMA", "DISPERSOGRAMA", "A APO2 ARTERIAL", "RI ARTERIAL",
+                "CTO2 ARTERIAL", "TCO2 ARTERIAL", "%SO2C ARTERIAL", "BE(B) ARTERIAL",
+                "RTO ESTIMADO PLAQUET"
+            ];
+
+            const specialStudies = ["ASPIRADO DE MEDULA OSEA", "MIELOGRAMA", "ESTUDIO CITOMETRIA DE FLUJO", "CITOMETRIA DE FLUJO", "HIERRO MEDULAR"];
+            const resultRegex = />Resultado:\s*(.*)/;
+
+            function initDate(date) {
+                if (!dataByDate[date]) {
+                    dataByDate[date] = {
+                        hemograma: {}, perfilHepatico: {}, gases: {}, gasesV: {},
+                        coagulacion: {}, otros: [], uro: [], micro: [],
+                        especiales: [], hiv: null, htlv: null, frotis: [],
+                        sedimento: [], drogas: {}, retics: {}
+                    };
+                }
+            }
+
+            // Panel de drogas de abuso en orina (LABCORE): cada ítem viene como
+            // "** NOMBRE (ABREV)" seguido de >Resultado: DETECTABLE / NO DETECTABLE.
+            // Se agrupan todas en una sola línea separadas por comas, en vez de una línea por droga.
+            const drogasAbusoMap = {
+                "AMFETAMINA": "Anfetaminas",
+                "MORFINA": "Morfina",
+                "METILENEDIOXIMETANFETAMINA": "MDMA",
+                "BENZODIAZEPINAS": "Benzodiacepinas",
+                "ANTIDREPRESIVOS TRICICLICOS": "Antidepresivos tricíclicos",
+                "ANTIDEPRESIVOS TRICICLICOS": "Antidepresivos tricíclicos",
+                "BARBITURICOS": "Barbitúricos",
+                "COCAINA": "Cocaína",
+                "MARIHUANA": "Marihuana",
+                "FENCICLIDINA": "Fenciclidina",
+                "FENTANILO": "Fentanilo",
+                "METANFETAMINAS": "Metanfetaminas",
+                "METADONA": "Metadona",
+                "OXICODONA": "Oxicodona"
+            };
+            const drogasAbusoOrder = ["Anfetaminas", "Morfina", "MDMA", "Metanfetaminas", "Benzodiacepinas", "Antidepresivos tricíclicos", "Barbitúricos", "Cocaína", "Marihuana", "Fenciclidina", "Fentanilo", "Metadona", "Oxicodona"];
+
+            // Panel de reticulocitos (formato LABCORE, sección HEMATOLOGIA): sin este mapa, estos
+            // ítems se pierden porque currentStudy === "HEMO" descarta genéricamente cualquier
+            // parámetro que no esté en hemoMap, y el encabezado "RETICULOCITOS%" además cae en la
+            // regla que ignora encabezados de HEMO con "%" (pensada para diferenciales relativos).
+            const reticulocitosMap = {
+                "RECUENTO CORREGIDO DE RETICULOCITOS": "Reticulocitos corregidos",
+                "RETICULOCITOS%": "Reticulocitos %",
+                "RETICULOCITOS #": "Reticulocitos absolutos",
+                "FRACCION DE RETICULOCITO INMADURO": "FRI",
+                "FRACCIÓN DE RETICULOCITO INMADURO": "FRI",
+                "HEMOGLOBINA RETICULOCITOS": "RHE"
+            };
+            const reticulocitosOrder = ["Reticulocitos %", "Reticulocitos absolutos", "Reticulocitos corregidos", "FRI", "RHE"];
+
+            function processEntry(date, rawName, val) {
+                let name = rawName.toUpperCase().trim();
+                if (ignoreClinical.some(item => name.includes(item))) return;
+
+                initDate(date);
+                const storage = dataByDate[date];
+
+                let cleanVal = val.replace(/,/g, '.');
+                const nameClean = name.replace(/\s*\(.*$/, '').trim();
+                let displayName = nameAlias[nameClean] || nameAlias[name] || nameAlias[name.replace(/\.$/, '')] || toTitleCase(nameClean);
+
+                if (coagMap[nameClean] || coagMap[name]) {
+                    storage.coagulacion[coagMap[nameClean] || coagMap[name]] = cleanVal;
+                    return;
+                }
+                if (nameClean === "INR" || name === "INR") { storage.coagulacion["INR"] = cleanVal; return; }
+                if (nameClean === "TIEMPO DE TROMBOPLAS" || name === "TIEMPO DE TROMBOPLAS") { storage.coagulacion["PTT"] = cleanVal; return; }
+                if (nameClean === "TIEMPO DE PROTROMBIN" || name === "TIEMPO DE PROTROMBIN") { storage.coagulacion["PT"] = cleanVal; return; }
+                // Controles del día de PT/PTT: se reportan entre paréntesis junto al PT/PTT del paciente.
+                // "CONTROL DIA PTT" empieza con "CONTROL DIA PT", así que hay que revisar PTT primero.
+                if (name.startsWith("CONTROL DIA PTT")) { storage.coagulacion["PTT_CONTROL"] = cleanVal; return; }
+                if (name.startsWith("CONTROL DIA PT")) { storage.coagulacion["PT_CONTROL"] = cleanVal; return; }
+                if (ignoreCoag.some(i => name.startsWith(i))) return;
+
+                if (hemoMap[name]) {
+                    storage.hemograma[hemoMap[name]] = cleanVal;
+                    return;
+                }
+
+                if (gasesMap[name] || gasesMap[nameClean]) {
+                    let mapName = gasesMap[name] ? name : nameClean;
+                    let gKey = gasesMap[mapName];
+                    
+                    if (gKey === "BE_B") {
+                        if (!storage.gases["BE"]) storage.gases["BE"] = cleanVal;
+                    } else if (gKey === "HCO3_STD") {
+                        if (!storage.gases["HCO3"]) storage.gases["HCO3"] = cleanVal;
+                    } else if (gKey === "HCO3_C") {
+                        storage.gases["HCO3"] = cleanVal; // Preferencia por HCO3 Calculado
+                    } else {
+                        storage.gases[gKey] = cleanVal;
+                    }
+                    return;
+                }
+
+                if (gasesVenosoMap[name] || gasesVenosoMap[nameClean]) {
+                    let mapNameV = gasesVenosoMap[name] ? name : nameClean;
+                    let gKeyV = gasesVenosoMap[mapNameV];
+
+                    if (gKeyV === "BE_B") {
+                        if (!storage.gasesV["BE"]) storage.gasesV["BE"] = cleanVal;
+                    } else if (gKeyV === "HCO3_STD") {
+                        if (!storage.gasesV["HCO3"]) storage.gasesV["HCO3"] = cleanVal;
+                    } else if (gKeyV === "HCO3_C") {
+                        storage.gasesV["HCO3"] = cleanVal; // Preferencia por HCO3 Calculado
+                    } else {
+                        storage.gasesV[gKeyV] = cleanVal;
+                    }
+                    return;
+                }
+
+                if (reticulocitosMap[name] || reticulocitosMap[nameClean]) {
+                    const reticKey = reticulocitosMap[name] || reticulocitosMap[nameClean];
+                    storage.retics[reticKey] = cleanVal;
+                    return;
+                }
+
+                if (currentStudy === "HEMO" || (currentStudy === "GASES" && !["CREATININA", "BUN", "SODIO", "POTASIO", "CLORO", "MAGNESIO", "CALCIO", "FOSFORO"].includes(nameClean))) return;
+
+                if (hepNames.includes(displayName)) {
+                    storage.perfilHepatico[displayName] = cleanVal;
+                    return;
+                }
+
+                if (currentStudy === "URO" || displayName.includes("Nitritos") || displayName.includes("Densidad")) {
+                    storage.uro.push({ name: displayName, value: cleanVal });
+                    return;
+                }
+
+                if (drogasAbusoMap[nameClean]) {
+                    storage.drogas[drogasAbusoMap[nameClean]] = cleanVal;
+                    return;
+                }
+
+                if (!storage.otros.find(o => o.name === displayName)) {
+                    storage.otros.push({ name: displayName, value: cleanVal, printed: false });
+                }
+            }
+
+            function buildSpecialSummary(name, date, rawLines) {
+                const nameLower = name.toLowerCase();
+                const isMielo = nameLower.includes("medula") || nameLower.includes("mielograma");
+                const isCito  = nameLower.includes("citometria") || nameLower.includes("citometría");
+                const isHierro = nameLower.includes("hierro");
+
+                if (isHierro) {
+                    const joined = rawLines.join(" ").replace(/\s+/g, " ").trim();
+                    return { label: "HIERRO MEDULAR", date, summary: joined };
+                }
+
+                if (isMielo) {
+                    const parts = [];
+                    let conclusionLines = [];
+                    let inConclusion = false;
+                    let aspiracion = "", celularidad = "";
+
+                    rawLines.forEach(l => {
+                        const low = l.toLowerCase().trim();
+                        if (low.includes("-- conclusion --") || low.includes("-- conclusión --") || low.startsWith("conclusion")) {
+                            inConclusion = true; return;
+                        }
+                        if (inConclusion) {
+                            const clean = l.replace(/^-+\s*/, "").trim();
+                            if (clean) conclusionLines.push(clean);
+                            return;
+                        }
+                        if (low.startsWith("aspiración:") || low.startsWith("aspiracion:")) {
+                            aspiracion = l.split(/:\s*/)[1]?.trim() || "";
+                        }
+                        if (low.startsWith("celularidad:")) {
+                            celularidad = l.split(/:\s*/)[1]?.trim() || "";
+                        }
+                        const lineNames = ["línea megacariocítica", "linea megacariocitica", "línea granulocítica", "linea granulocítica", "linea linfoide", "línea linfoide"];
+                        if (lineNames.some(n => low.startsWith(n))) {
+                            const label = l.split(/:\s*/)[0].trim();
+                            const val = l.split(/:\s*/)[1]?.trim() || "";
+                            if (val) parts.push(`${label}: ${val}`);
+                        }
+                        const difItems = ["mielocitos:", "metamielocitos:", "neutrófilos", "basófilos:", "linfocitos:", "monocitos:"];
+                        if (difItems.some(n => low.startsWith(n))) {
+                            const match = l.match(/^([^:]+):\s*([\d.]+)/);
+                            if (match) parts.push(`${match[1].trim()}: ${match[2]}%`);
+                        }
+                        if (low.startsWith("linfocitos de morfología") || low.startsWith("linfocitos de morfologia")) {
+                            const match = l.match(/^([^:]+):\s*([\d.]+)/);
+                            if (match) parts.push(`${match[1].trim()}: ${match[2]}%`);
+                        }
+                    });
+
+                    let summary = "";
+                    if (aspiracion) summary += `Aspiración: ${aspiracion}`;
+                    if (celularidad) summary += (summary ? ", " : "") + `Celularidad: ${celularidad}`;
+                    if (parts.length > 0) summary += (summary ? ", " : "") + parts.join(", ");
+                    if (conclusionLines.length > 0) {
+                        const conclusionText = conclusionLines.join(" ").replace(/\s+/g, " ").trim();
+                        summary += (summary ? ", " : "") + `Conclusión: ${conclusionText}`;
+                    }
+                    return { label: "ASPIRADO DE MÉDULA ÓSEA", date, summary };
+                }
+
+                if (isCito) {
+                    const parts = [];
+                    let fechaRecibo = "";
+                    let tipoMuestra = "";
+                    let celularidad = "";
+                    let conclusionLines = [];
+                    let inConclusion = false;
+                    let inCaracteristicas = false;
+
+                    rawLines.forEach(l => {
+                        const low = l.toLowerCase().trim();
+                        if (!l.trim()) return;
+                        if (low.startsWith("fecha de recibo:")) { fechaRecibo = l.split(/:\s*/)[1]?.trim() || ""; return; }
+                        if (low.startsWith("tipo de muestra:")) { tipoMuestra = l.split(/:\s*/)[1]?.trim() || ""; return; }
+                        if (low.startsWith("celularidad:")) { celularidad = l.split(/:\s*/)[1]?.trim() || ""; return; }
+                        if (low.includes("características generales") || low.includes("caracteristicas generales")) { inCaracteristicas = true; inConclusion = false; return; }
+                        if (low.includes("conclusión del análisis") || low.includes("conclusion del analisis") || low.includes("conclusión inmunofenotípica")) { inConclusion = true; inCaracteristicas = false; return; }
+                        if (low.includes("resultado del análisis") || low.includes("resultado del analisis")) { inCaracteristicas = false; inConclusion = false; return; }
+                        if (inConclusion) {
+                            if (!l.match(/^[A-Z][a-z]+ [A-Z][a-z]+/) || l.includes("MD") || l.includes("MSc")) {
+                                const clean = l.trim();
+                                if (clean && !clean.match(/^\d+\./)) conclusionLines.push(clean);
+                            }
+                            return;
+                        }
+                        if (inCaracteristicas) {
+                            const match = l.match(/^\s*\d+\.\s*(.+?):\s*(.+)/);
+                            if (match) parts.push(`${match[1].trim()}: ${match[2].trim()}`);
+                            return;
+                        }
+                    });
+
+                    let summary = "";
+                    if (tipoMuestra) summary += `Muestra: ${tipoMuestra}`;
+                    if (celularidad) summary += (summary ? ", " : "") + `Celularidad: ${celularidad}`;
+                    if (parts.length > 0) summary += (summary ? ", " : "") + parts.join(", ");
+                    if (conclusionLines.length > 0) {
+                        const conclusionText = conclusionLines.join(" ").replace(/\s+/g, " ").trim();
+                        summary += (summary ? ", " : "") + `Conclusión: ${conclusionText}`;
+                    }
+                    return { label: "CITOMETRÍA DE FLUJO", date: fechaRecibo || date, summary };
+                }
+                return null;
+            }
+
+            lines.forEach(rawLine => {
+                let line = rawLine.replace(/[\u00A0\u200B]/g, ' ').trim();
+                if (!line || line.includes('_____') || line.includes('*****') || line.includes('<<<<') || line.includes('>>>>')) return;
+                // Líneas separadoras de solo guiones (ej. "----------..."): tratarlas como
+                // separador de sección y no como posible valor de un ítem pendiente (evita que
+                // encabezados vacíos como "** TAMIZAJE DROGAS ABUSO" / "** DROGAS DE ABUSO"
+                // terminen capturando la línea de guiones o el texto de nota legal como "valor".
+                if (/^-{3,}$/.test(line)) {
+                    if (pendingItem && pendingResult) { pendingItem = null; pendingResult = false; }
+                    refTableActive = false;
+                    postEtanolActive = false;
+                    return;
+                }
+
+                const dateMatchValidacion1 = line.match(/Fecha Validaci[oó]n:\s*(\d{4})-(\d{2})-(\d{2})/i);
+                const dateMatchValidacion2 = line.match(/Fecha Validaci[oó]n:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+                
+                if (dateMatchValidacion1) {
+                    currentDateStr = `${dateMatchValidacion1[3].padStart(2,'0')}/${dateMatchValidacion1[2].padStart(2,'0')}/${dateMatchValidacion1[1]}`;
+                } else if (dateMatchValidacion2) {
+                    currentDateStr = `${dateMatchValidacion2[1].padStart(2,'0')}/${dateMatchValidacion2[2].padStart(2,'0')}/${dateMatchValidacion2[3]}`;
+                } else {
+                    const dateMatchGeneral = line.match(/Fecha:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+                    if (dateMatchGeneral) currentDateStr = `${dateMatchGeneral[1].padStart(2,'0')}/${dateMatchGeneral[2].padStart(2,'0')}/${dateMatchGeneral[3]}`;
+                }
+
+                initDate(currentDateStr);
+                if (line.toLowerCase().startsWith('estudio:')) {
+                    currentStudy = "";
+                    const estudioUpper = line.toUpperCase();
+                    // Detectar FROTIS DE SANGRE PERIFERICA
+                    if (estudioUpper.includes("FROTIS DE SANGRE PERIFERICA") || estudioUpper.includes("FROTIS DE SANGRE PERIFÉRICA")) {
+                        frotisActive = true;
+                        frotisLines = [];
+                        frotisCapturingContent = false;
+                        return;
+                    }
+                    // Detectar SEDIMENTO URINARIO en formato tabular
+                    if (estudioUpper.includes("SEDIMENTO URINARIO") || estudioUpper.includes("SEDIMENTO")) {
+                        // Cerrar sedimento tabular previo si lo hubiera
+                        if (sedimentoTabularActive && sedimentoTabularLines.length > 0) {
+                            dataByDate[currentDateStr].sedimento.push(...sedimentoTabularLines);
+                        }
+                        sedimentoTabularActive = true;
+                        sedimentoTabularLines = [];
+                        return;
+                    }
+                    // Cualquier otro Estudio: cierra el sedimento tabular si estaba activo
+                    if (sedimentoTabularActive && sedimentoTabularLines.length > 0) {
+                        dataByDate[currentDateStr].sedimento.push(...sedimentoTabularLines);
+                        sedimentoTabularActive = false;
+                        sedimentoTabularLines = [];
+                    }
+                }
+
+                if (line.includes("HEMATOLOGIA") || line.includes("CUADRO HEMATICO")) currentStudy = "HEMO";
+                if (line.includes("QUIMICA")) currentStudy = "QUIM";
+                // Solo cambiar a URO con encabezados de sección explícitos, nunca por contenido de líneas internas.
+                // (Antes esto se bloqueaba si currentStudy === "MICRO", pero eso impedía que un
+                // encabezado real "ORINAS." tras un bloque de MICROBIOLOGIA activara el uroanálisis.)
+                if (line.toUpperCase().includes("UROANALISIS") || line.toUpperCase().includes("ORINAS") || (line.toUpperCase().includes("ORINA") && line.toUpperCase().includes("ESTUDIO"))) currentStudy = "URO";
+                if (line.includes("GASES ARTERIALES") || line.includes("GASES VENOSOS")) currentStudy = "GASES";
+                if (line.includes("MICROBIOLOGIA")) currentStudy = "MICRO";
+                if (line.includes("INMUNOLOGIA") || line.includes("INMUNOLOGÍA")) currentStudy = "INMUNO";
+                if (line.includes("COAGULACION") || line.includes("COAGULACIÓN")) currentStudy = "COAG";
+                if (line.includes("CITOMETRIA DE FLUJO") || line.includes("CITOMETRÍA DE FLUJO")) currentStudy = "CITOMETRIA";
+
+                const lower = line.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                // Si veníamos "dentro" de la tabla de rangos de referencia de un ítem simple,
+                // seguir descartando hasta encontrar un límite claro (nuevo ítem, nuevo estudio
+                // o nueva nota); esos límites sí se dejan procesar con normalidad.
+                if (refTableActive) {
+                    if (line.startsWith('** ') || lower.startsWith('estudio:') || /^nota\s+\d+/.test(lower) || /^orden medica/.test(lower)) {
+                        refTableActive = false;
+                    } else {
+                        return;
+                    }
+                }
+
+                if (postEtanolActive) {
+                    if (line.startsWith('** ') || lower.startsWith('estudio:') || /^nota\s+\d+/.test(lower) || /^orden medica/.test(lower)) {
+                        postEtanolActive = false;
+                    } else {
+                        return;
+                    }
+                }
+
+                // BLOQUE FROTIS DE SANGRE PERIFÉRICA
+                // Captura verbatim todo el contenido, sin modificar, sin omitir
+                if (frotisActive) {
+                    // El reporte del frotis termina cuando aparece un nuevo separador de estudio
+                    if (line.includes('_____') || line.includes('*****') || line.includes('<<<<') || line.includes('>>>>')) {
+                        // Ya fue filtrado antes de llegar aquí, nunca ocurre — por seguridad
+                        frotisActive = false;
+                        return;
+                    }
+                    // Detectar inicio real del contenido: la línea "Resultado" (sin ">" porque es encabezado de columna)
+                    if (!frotisCapturingContent) {
+                        if (lower === "resultado") {
+                            frotisCapturingContent = true;
+                        }
+                        // También puede venir como "Estudio:FROTIS DE SANGRE PERIFERICA" secundario — ignorar
+                        return;
+                    }
+                    // Una vez capturando, guardar la línea tal como viene (rawLine sin trim solo recorte de non-break spaces)
+                    const rawLineClean = rawLine.replace(/[\u00A0\u200B]/g, ' ');
+                    // Detener si aparece una nueva nota/estudio que indique otro examen
+                    if (/^Nota \d+/.test(rawLineClean.trim()) || /^Orden Medica/i.test(rawLineClean.trim())) {
+                        if (frotisLines.length > 0) {
+                            dataByDate[currentDateStr].frotis.push(frotisLines.slice());
+                        }
+                        frotisActive = false;
+                        frotisLines = [];
+                        frotisCapturingContent = false;
+                        // No hacer return: dejar que la línea sea procesada normalmente (es nueva nota)
+                    } else {
+                        frotisLines.push(rawLineClean);
+                        return;
+                    }
+                }
+
+                // SEDIMENTO URINARIO TABULAR (Estudio:SEDIMENTO URINARIO AUT)
+                // Captura líneas de datos: HEMATIES, LEUCOCITOS, BACTERIAS, CELULAS, etc.
+                if (sedimentoTabularActive) {
+                    // Ignorar la línea de encabezado de columnas
+                    const lowerSed = line.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    if (lowerSed.startsWith("prueba") || lowerSed.startsWith("nombre examen")) return;
+                    // Una nueva Nota o sección cierra el bloque (ya manejado en Estudio:, pero por seguridad)
+                    if (/^Nota \d+/.test(line) || /^Orden Medica/i.test(line)) {
+                        if (sedimentoTabularLines.length > 0) {
+                            dataByDate[currentDateStr].sedimento.push(...sedimentoTabularLines);
+                        }
+                        sedimentoTabularActive = false; sedimentoTabularLines = [];
+                        // No return: dejar procesar la línea normalmente
+                    } else {
+                        // Parsear: columnas separadas por espacios múltiples o tabs
+                        const cols = line.split(/\t+| {2,}/).map(p => p.trim()).filter(p => p);
+                        if (cols.length >= 2) {
+                            // Nombre + valor + unidad opcional (ej. "HEMATIES 3 CPA" → "Hematies 3 CPA")
+                            const nombre = formatUroName(cols[0]);
+                            const resto = cols.slice(1).join(" ");
+                            sedimentoTabularLines.push({ name: nombre, value: resto });
+                        } else if (cols.length === 1 && cols[0]) {
+                            // Línea de un solo token (raro, ignorar)
+                        }
+                        return;
+                    }
+                }
+
+                // BLOQUE FROTIS FORMATO 2: viene con ** dentro de HEMATOLOGIA
+                // Captura verbatim entre >Resultado: y >Unidades:, incluyendo DIFERENCIAL MANUAL
+                if (frotis2Active) {
+                    // FIX v1.8: antes, este bloque interceptaba y descartaba TODA línea mientras
+                    // frotis2Active fuera true — incluyendo encabezados "** " de parámetros del
+                    // hemograma (RECUENTO DE BLANCOS, HEMOGLOBINA, etc.) que vienen después del
+                    // frotis/diferencial en la misma sección de HEMATOLOGIA. Como el return era
+                    // incondicional, el cierre de frotis2Active nunca se alcanzaba y esos parámetros
+                    // quedaban atrapados (y sus valores numéricos, perdidos), vaciando el hemograma.
+                    // Ahora se detecta aquí mismo si el nuevo "** " es continuación del frotis
+                    // (FROTIS DE SANGRE PERIFERICA / DIFERENCIAL MANUAL) o si es otro parámetro:
+                    // si es otro parámetro, se cierra el bloque de frotis y la línea sigue su curso
+                    // normal (sin "return") para que la detecte el manejo genérico de "** " de más abajo.
+                    if (line.startsWith('** ')) {
+                        const headerCheck = line.replace(/^\*+\s*/, '').trim().toUpperCase();
+                        const isFrotisContinuation = headerCheck.includes("FROTIS DE SANGRE PERIFERICA") ||
+                            headerCheck.includes("FROTIS DE SANGRE PERIFÉRICA") ||
+                            headerCheck.includes("DIFERENCIAL MANUAL");
+                        if (!isFrotisContinuation) {
+                            if (frotis2Lines.length > 0) {
+                                dataByDate[currentDateStr].frotis.push(frotis2Lines.slice());
+                            }
+                            frotis2Active = false; frotis2Lines = []; frotis2CapturingResult = false;
+                            // No return: dejar que la línea "** ..." se procese normalmente abajo.
+                        }
+                    }
+                    if (frotis2Active) {
+                        if (line.startsWith('>Resultado:')) {
+                            frotis2CapturingResult = true;
+                            // Si hay texto en la misma línea del >Resultado:, ignorarlo (suele venir vacío)
+                            return;
+                        }
+                        if (frotis2CapturingResult) {
+                            if (line.startsWith('>Unidades:') || line.startsWith('>Valores de Ref.:')) {
+                                // Fin del bloque actual — pero puede continuar con DIFERENCIAL MANUAL
+                                frotis2CapturingResult = false;
+                                return;
+                            }
+                            if (line.startsWith('---')) return;
+                            // Guardar línea verbatim (usar rawLine limpio de caracteres invisibles)
+                            const rawLineClean = rawLine.replace(/[\u00A0\u200B]/g, ' ');
+                            frotis2Lines.push(rawLineClean);
+                            return;
+                        }
+                        // Líneas fuera de >Resultado: pero dentro del bloque (ej. encabezados) — ignorar
+                        return;
+                    }
+                }
+
+                const inActiveBlock = microBlockActive || sedimentoActive || specialBlockActive || hivCapturingRanges || (pendingItem && (pendingItem.includes("HIV") || pendingItem.includes("VIH") || pendingItem.includes("HTLV")));
+                const metadataWords = ["orden medica", "numero de", "nombre:", "documento:", "bacteriologa", "fecha validacion", "rango de", "nombre examen", "prueba", "medico:", "importado", "estudio labcore", "validado por", "inferior:", "superior:", "resultado critico", "valor prioritario", "valor critico"];
+                const metadataWordsStrict = ["unidades", "v.ref"]; 
+                if (metadataWords.some(w => lower.includes(w))) return;
+                if (!inActiveBlock && metadataWordsStrict.some(w => lower.includes(w))) return;
+                if (!inActiveBlock && /^>Valores de Ref\.:\s*$/i.test(line)) { refTableActive = true; return; }
+                if (lower.startsWith("nota")) return;
+
+                if (hivCapturingRanges) {
+                    if (line.startsWith('>Unidades:') || line.startsWith('>Valores de Ref.:') || line.startsWith('---') || line.startsWith('**')) {
+                        if (pendingHIVValue !== null) {
+                            const rangesText = hivRangesLines.join(" ").replace(/\s+/g, " ").trim();
+                            dataByDate[currentDateStr].hiv = { value: pendingHIVValue, ranges: rangesText };
+                            pendingHIVValue = null;
+                        }
+                        hivCapturingRanges = false;
+                        hivRangesLines = [];
+                        if (!line.startsWith('**')) return;
+                    } else {
+                        const rangeLine = line.replace(/^[>*\s]+/, "").trim();
+                        const rangeLineLow = rangeLine.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                        const skipRange = rangeLineLow.includes("metodolog") || rangeLineLow.includes("mtetodolog") || rangeLineLow.includes("favor tener") || rangeLineLow.includes("cambio en valores") || rangeLineLow.startsWith("rangos de referencia") || rangeLineLow.startsWith("rango de referencia");
+                        if (rangeLine && !skipRange) hivRangesLines.push(rangeLine);
+                        return;
+                    }
+                }
+
+                if (line.startsWith('** ')) {
+                    if (currentStudy === "MICRO" && microBlockActive && pendingItem && currentMicroData.length > 0) {
+                        dataByDate[currentDateStr].micro.push({ name: toTitleCase(pendingItem), lines: currentMicroData });
+                    }
+                    if (specialBlockActive && specialBlockLines.length > 0) {
+                        const result = buildSpecialSummary(specialBlockName, specialBlockDate || currentDateStr, specialBlockLines);
+                        if (result) dataByDate[currentDateStr].especiales.push(result);
+                    }
+                    const nameRaw = line.replace(/^\*+\s*/, '').trim().toUpperCase();
+
+                    // Formato 2 del frotis: viene como ** dentro de HEMATOLOGIA
+                    // FROTIS DE SANGRE PERIFERICA activa el bloque; DIFERENCIAL MANUAL es su continuación
+                    if (nameRaw.includes("FROTIS DE SANGRE PERIFERICA") || nameRaw.includes("FROTIS DE SANGRE PERIFÉRICA")) {
+                        frotis2Active = true;
+                        frotis2CapturingResult = false;
+                        // No resetear frotis2Lines aquí — se inicia vacío al detectar el primer bloque
+                        frotis2Lines = [];
+                        pendingItem = null; pendingResult = false; microBlockActive = false; currentMicroData = []; specialBlockActive = false;
+                        return;
+                    }
+                    if (frotis2Active && nameRaw.includes("DIFERENCIAL MANUAL")) {
+                        // Continuación del frotis — agregar separador visual y seguir capturando
+                        frotis2CapturingResult = false;
+                        pendingItem = null; pendingResult = false; microBlockActive = false; currentMicroData = []; specialBlockActive = false;
+                        return;
+                    }
+                    // Si estaba capturando frotis2 y llega otro ** que NO es del frotis, cerrar el bloque
+                    if (frotis2Active) {
+                        if (frotis2Lines.length > 0) {
+                            dataByDate[currentDateStr].frotis.push(frotis2Lines.slice());
+                        }
+                        frotis2Active = false; frotis2Lines = []; frotis2CapturingResult = false;
+                    }
+
+                    if (specialStudies.some(s => nameRaw.includes(s))) {
+                        specialBlockActive = true; specialBlockName = nameRaw; specialBlockLines = []; specialBlockDate = ""; return;
+                    }
+                    // Encabezados de panel sin resultado propio (ej. "** DROGAS DE ABUSO" /
+                    // "** TAMIZAJE DROGAS ABUSO"): son solo el título de la sección, su
+                    // ">Resultado:" siempre viene vacío. Ignorarlos como ítem evita que el
+                    // texto legal o líneas sueltas que siguen terminen "pegadas" como su valor.
+                    const isPanelHeaderSinResultado = nameRaw === "DROGAS DE ABUSO" || nameRaw === "TAMIZAJE DROGAS ABUSO";
+                    const isPorcentajeHemoDescartable = currentStudy === "HEMO" && nameRaw.includes('%') && !nameRaw.includes("RETICULOCITO");
+                    pendingItem = (isPanelHeaderSinResultado || isPorcentajeHemoDescartable) ? null : nameRaw;
+                    pendingResult = false; microBlockActive = false; currentMicroData = []; specialBlockActive = false;
+                    return;
+                }
+
+                if (specialBlockActive) {
+                    if (line.startsWith('>Resultado:')) {
+                        const valMatch = line.match(resultRegex);
+                        if (valMatch && valMatch[1]) specialBlockLines.push(valMatch[1].trim());
+                        return;
+                    }
+                    if (line.startsWith('>Unidades:') || line.startsWith('>Valores de Ref.:')) {
+                        const result = buildSpecialSummary(specialBlockName, specialBlockDate || currentDateStr, specialBlockLines);
+                        if (result) dataByDate[currentDateStr].especiales.push(result);
+                        specialBlockActive = false; return;
+                    }
+                    if (line.startsWith('---')) return;
+                    const fechaProcMatch = line.match(/Fecha\s+de\s+procedimiento:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i) || line.match(/Fecha\s+de\s+[Rr]ecibo:\s*(.+)/i);
+                    if (fechaProcMatch) specialBlockDate = fechaProcMatch[1].trim();
+                    specialBlockLines.push(line);
+                    return;
+                }
+
+                if (currentStudy === "MICRO" && pendingItem) {
+                    if (line.startsWith('>Resultado:')) {
+                        microBlockActive = true;
+                        const valMatch = line.match(resultRegex);
+                        if (valMatch && valMatch[1]) currentMicroData.push(valMatch[1].trim());
+                        return;
+                    }
+                    if (microBlockActive) {
+                        if (line.startsWith('>Unidades:') || line.startsWith('>Valores de Ref') || line.startsWith('---')) {
+                            if (currentMicroData.length > 0) dataByDate[currentDateStr].micro.push({ name: toTitleCase(pendingItem), lines: currentMicroData });
+                            microBlockActive = false; pendingItem = null; return;
+                        }
+                        const lowerLine = line.toLowerCase();
+                        if (!lowerLine.includes('estado de resultado') && !lowerLine.includes('antibiotico') && !(lowerLine.includes('mic') && lowerLine.includes('interpr'))) {
+                            const parts = line.split(/\t+| {2,}/).map(p => p.trim()).filter(p => p);
+                            if (parts.length > 0) {
+                                const label = parts[0].toLowerCase().replace(/:$/, '');
+                                const specialLabels = ["tipo de muestra", "tipo muestra", "muestra", "microorganismo", "recuento", "fecha", "proceso dia 1", "proceso dia 2", "proceso dia 3"];
+                                if (specialLabels.includes(label) && parts.length > 1) {
+                                    // Guardar como "Label: valor" para campos con nombre conocido
+                                    currentMicroData.push(parts[0].replace(/:$/, '') + ": " + parts.slice(1).join(" "));
+                                } else if (parts.length >= 2) {
+                                    // Guardar con separador \t para preservar columnas (MIC, interpretación)
+                                    currentMicroData.push(parts.join("\t"));
+                                } else {
+                                    currentMicroData.push(parts[0]);
+                                }
+                            }
+                        }
+                        return;
+                    }
+                }
+
+                if (pendingItem && (pendingItem.includes("HIV") || pendingItem.includes("VIH"))) {
+                    if (line.startsWith('>Resultado:')) {
+                        const valMatch = line.match(resultRegex);
+                        pendingHIVValue = valMatch ? valMatch[1].trim() : "";
+                        return;
+                    }
+                    if (pendingHIVValue !== null && line.startsWith('>Valores de Ref.:')) {
+                        hivCapturingRanges = true; hivRangesLines = []; return;
+                    }
+                    if (pendingHIVValue !== null && line.startsWith('>Unidades:')) return; 
+                }
+
+                if (pendingItem && pendingItem.includes("HTLV")) {
+                    if (line.startsWith('>Resultado:')) {
+                        const valMatch = line.match(resultRegex);
+                        const val = valMatch ? valMatch[1].trim() : "";
+                        if (val) dataByDate[currentDateStr].htlv = val;
+                        pendingItem = null;
+                        return;
+                    }
+                    if (line.startsWith('>Unidades:') || line.startsWith('>Valores de Ref.:')) { pendingItem = null; return; }
+                    return; 
+                }
+
+                if (pendingItem && line.startsWith('>Resultado:')) {
+                    const valMatch = line.match(resultRegex);
+                    const val = valMatch ? valMatch[1].trim() : "";
+                    if (pendingItem.includes("SEDIMENTO")) {
+                        sedimentoActive = true; sedimentoLines = [];
+                        if (val) sedimentoLines.push(val);
+                        return;
+                    }
+                    if (val) { processEntry(currentDateStr, pendingItem, val); pendingItem = null; } 
+                    else { pendingResult = true; }
+                    return;
+                }
+
+                if (sedimentoActive) {
+                    if (line.startsWith('>Unidades:') || line.startsWith('>Valores de Ref') || line.startsWith('---') || line.startsWith('**')) {
+                        if (sedimentoLines.length > 0) {
+                            // Parsear las líneas del sedimento en formato LABCORE (**SEDIMENTO)
+                            sedimentoLines.forEach(sl => {
+                                const su = sl.toUpperCase();
+                                // El ancho de columna del LIS no es fijo: si el nombre es largo, solo
+                                // queda 1 espacio antes del valor (en vez de 2+), así que primero
+                                // intentamos partir donde empieza el valor (número o signo "+").
+                                const m = sl.match(/^(.+?)\s+(\d.*|\+.*)$/);
+                                if (m) {
+                                    const valorLimpio = m[2].trim().replace(/\s+/g, ' ');
+                                    dataByDate[currentDateStr].sedimento.push({ name: formatUroName(m[1].trim()), value: valorLimpio });
+                                    return;
+                                }
+                                const parts = sl.split(/\t+| {2,}/).map(p => p.trim()).filter(p => p);
+                                if (parts.length >= 2) {
+                                    dataByDate[currentDateStr].sedimento.push({ name: formatUroName(parts[0]), value: parts.slice(1).join(" ") });
+                                } else {
+                                    // Línea simple: intentar extraer nombre+valor pegados por espacios
+                                    const mHem = su.match(/^(HEMATIES)\s+(.+)/); if (mHem) { dataByDate[currentDateStr].sedimento.push({ name: "Hematies", value: mHem[2].trim() }); return; }
+                                    const mLeu = su.match(/^(LEUCOCITOS)\s+(.+)/); if (mLeu) { dataByDate[currentDateStr].sedimento.push({ name: "Leucocitos", value: mLeu[2].trim() }); return; }
+                                    const mBac = su.match(/^(BACTERIAS)\s+(.+)/); if (mBac) { dataByDate[currentDateStr].sedimento.push({ name: "Bacterias", value: mBac[2].trim() }); return; }
+                                }
+                            });
+                        }
+                        sedimentoActive = false; return;
+                    }
+                    sedimentoLines.push(line); return;
+                }
+
+                if (pendingItem && pendingResult && !line.startsWith('>')) {
+                    let m = line.match(/(?:<|>|<=|>=)?\s*\d+[\d,.]*/);
+                    processEntry(currentDateStr, pendingItem, m ? m[0].trim() : line.trim());
+                    pendingItem = null; pendingResult = false; return;
+                }
+
+                const parts = line.split(/\t+| {2,}/).map(p => p.trim());
+                if (parts.length >= 2 && !line.startsWith('>')) {
+                    if (parts[0].toUpperCase().trim() === "ETANOL") postEtanolActive = true;
+                    processEntry(currentDateStr, parts[0], parts[1]);
+                }
+            });
+
+            if (specialBlockActive && specialBlockLines.length > 0) {
+                const result = buildSpecialSummary(specialBlockName, specialBlockDate || currentDateStr, specialBlockLines);
+                if (result) dataByDate[currentDateStr].especiales.push(result);
+            }
+            if (frotisActive && frotisLines.length > 0) {
+                initDate(currentDateStr);
+                dataByDate[currentDateStr].frotis.push(frotisLines.slice());
+                frotisActive = false;
+            }
+            if (frotis2Active && frotis2Lines.length > 0) {
+                initDate(currentDateStr);
+                dataByDate[currentDateStr].frotis.push(frotis2Lines.slice());
+                frotis2Active = false;
+            }
+            if (sedimentoTabularActive && sedimentoTabularLines.length > 0) {
+                initDate(currentDateStr);
+                dataByDate[currentDateStr].sedimento.push(...sedimentoTabularLines);
+                sedimentoTabularActive = false;
+            }
+            if (hivCapturingRanges && pendingHIVValue !== null) {
+                const rangesText = hivRangesLines.join(" ").replace(/\s+/g, " ").trim();
+                dataByDate[currentDateStr].hiv = { value: pendingHIVValue, ranges: rangesText };
+            }
+
+            let output = "";
+            
+            // FIX: ORDEN DE FECHAS CORREGIDO PARA EVITAR DESORGANIZACIÓN MATEMÁTICA
+            const sortedDates = Object.keys(dataByDate).sort((a, b) => {
+                if (a === "Fecha no especificada") return 1;
+                if (b === "Fecha no especificada") return -1;
+                const [d1, m1, y1] = a.split('/'); const [d2, m2, y2] = b.split('/');
+                return new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1);
+            });
+
+            const hemoOrder = ["Leucos", "Neu", "Linf", "Mono", "Eos", "Baso", "Hemoglobina", "HCTO", "VCM", "HCM", "CHCM", "RDW", "Plaquetas"];
+
+            sortedDates.forEach(date => {
+                const day = dataByDate[date];
+                let dayLines = [];
+
+                if (Object.keys(day.hemograma).length > 0) {
+                    dayLines.push(hemoOrder.map(k => `${k} ${formatHemoValue(k, day.hemograma[k])}`).filter(x => !x.endsWith('-')).join(', '));
+                }
+
+                const coagP = [];
+                if (day.coagulacion["PT"]) {
+                    let ptLine = `PT ${day.coagulacion["PT"]}`;
+                    if (day.coagulacion["PT_CONTROL"]) ptLine += ` (control ${day.coagulacion["PT_CONTROL"]})`;
+                    coagP.push(ptLine);
+                }
+                if (day.coagulacion["PTT"]) {
+                    let pttLine = `PTT ${day.coagulacion["PTT"]}`;
+                    if (day.coagulacion["PTT_CONTROL"]) pttLine += ` (control ${day.coagulacion["PTT_CONTROL"]})`;
+                    coagP.push(pttLine);
+                }
+                if (day.coagulacion["INR"]) coagP.push(`INR ${day.coagulacion["INR"]}`);
+                if (coagP.length > 0) dayLines.push(coagP.join(', '));
+
+                const ren = [];
+                const creatEntry = day.otros.find(o => o.name === "Creatinina");
+                const bunEntry = day.otros.find(o => o.name === "BUN");
+                if (creatEntry) {
+                    let creatLine = `Creatinina ${creatEntry.value}`;
+                    if (tfgData.confirmado) {
+                        const creatVal = parseFloat(creatEntry.value.toString().replace(',', '.').replace(/[^\d.]/g, ''));
+                        if (!isNaN(creatVal) && creatVal > 0) {
+                            const tfg = calcularCKDEPI(creatVal, tfgData.sexo, tfgData.edad);
+                            creatLine += ` (TFG CKD-EPI: ${tfg} ml/min/1.73 m2)`;
+                        }
+                    }
+                    ren.push(creatLine);
+                    creatEntry.printed = true;
+                }
+                if (bunEntry) { ren.push(`BUN ${bunEntry.value}`); bunEntry.printed = true; }
+                if (ren.length > 0) dayLines.push(ren.join(', '));
+
+                const eOrder = ["Sodio", "Potasio", "Cloro", "Magnesio", "Calcio", "Fosforo"];
+                const elec = [];
+                eOrder.forEach(n => {
+                    // FIX: Búsqueda estricta (===) para no confundir Sodio en Orina con Electrolitos en sangre
+                    const f = day.otros.find(o => o.name === n && !o.printed);
+                    if (f) {
+                        elec.push(`${f.name} ${f.value}`);
+                        f.printed = true;
+                    }
+                });
+                if (elec.length > 0) dayLines.push(elec.join(', '));
+
+                let hepP = [];
+                hepNames.forEach(n => {
+                    if (day.perfilHepatico[n]) hepP.push(`${n} ${day.perfilHepatico[n]}`);
+                });
+                if (hepP.length > 0) dayLines.push(hepP.join(', '));
+
+                const gOrder = ["pH", "pO2", "pCO2", "HCO3", "BE"];
+                let gasP = [];
+                gOrder.forEach(n => { if (day.gases[n]) gasP.push(`${n} ${day.gases[n]}`); });
+                if (day.gases["FIO2"]) {
+                    const rawFio2 = day.gases["FIO2"].replace('%', '').replace(',', '.');
+                    const fio2Val = parseFloat(rawFio2);
+                    gasP.push(`FIO2 ${rawFio2}%`);
+                    
+                    if (day.gases["pO2"]) {
+                        const po2Val = parseFloat(day.gases["pO2"].toString().replace(',', '.'));
+                        if (!isNaN(fio2Val) && !isNaN(po2Val)) {
+                            if (fio2Val === 0) {
+                                gasP.push("PAFI no calculable");
+                            } else {
+                                // Auto-detectar si ya se digitó como decimal (ej. 0.21) para no volver a dividirlo
+                                const pafi = (fio2Val > 0 && fio2Val <= 1) ? (po2Val / fio2Val) : (po2Val / (fio2Val / 100));
+                                gasP.push(`PAFI ${Math.round(pafi)}`);
+                            }
+                        }
+                    }
+                }
+                if (gasP.length > 0) dayLines.push(`GASES ARTERIALES: ${gasP.join(', ')}`);
+
+                // GASES VENOSOS: mismo orden que arteriales, pero sin cálculo de PAFI.
+                // Si el mismo día hay gases arteriales y venosos, va debajo separado por una línea en blanco.
+                let gasPV = [];
+                gOrder.forEach(n => { if (day.gasesV[n]) gasPV.push(`${n} ${day.gasesV[n]}`); });
+                if (day.gasesV["FIO2"]) {
+                    const rawFio2V = day.gasesV["FIO2"].replace('%', '').replace(',', '.');
+                    gasPV.push(`FIO2 ${rawFio2V}%`);
+                }
+                if (gasPV.length > 0) {
+                    const lineaVenosa = `GASES VENOSOS: ${gasPV.join(', ')}`;
+                    dayLines.push(gasP.length > 0 ? `\n${lineaVenosa}` : lineaVenosa);
+                }
+
+                // Agregar el resto de paraclínicos (Como Sodio en orina aislada, Ácido Úrico, etc)
+                day.otros.filter(o => !o.printed).forEach(r => dayLines.push(`${r.name} ${r.value}`));
+
+                // Drogas de abuso: todas en una sola línea, separadas por comas
+                if (day.drogas && Object.keys(day.drogas).length > 0) {
+                    const drogasLine = drogasAbusoOrder
+                        .filter(n => day.drogas[n] !== undefined)
+                        .map(n => `${n} ${day.drogas[n]}`)
+                        .join(', ');
+                    if (drogasLine) dayLines.push(`Drogas de abuso: ${drogasLine}`);
+                }
+
+                // Reticulocitos: todos en una sola línea, separados por comas
+                if (day.retics && Object.keys(day.retics).length > 0) {
+                    const reticsLine = reticulocitosOrder
+                        .filter(n => day.retics[n] !== undefined)
+                        .map(n => `${n} ${day.retics[n]}`)
+                        .join(', ');
+                    if (reticsLine) dayLines.push(`Reticulocitos: ${reticsLine}`);
+                }
+
+                if (day.hiv) dayLines.push(`VIH ${day.hiv.value}${day.hiv.ranges ? ' ('+day.hiv.ranges+')' : ''}`);
+                if (day.htlv) dayLines.push(`Anticuerpos HTLV ${day.htlv}`);
+                if (day.uro.length > 0) dayLines.push("Uroanálisis: " + day.uro.map(u => `${u.name} ${u.value}`).join(', '));
+                if (day.sedimento && day.sedimento.length > 0) {
+                    dayLines.push("Sedimento urinario: " + day.sedimento.map(s => `${s.name} ${s.value}`).join(', '));
+                }
+                
+                if (day.micro && day.micro.length > 0) {
+                    day.micro.forEach(m => {
+                        const nameUp = m.name.toUpperCase();
+                        // Formato especial para UROCULTIVO
+                        if (nameUp.includes("UROCULTIVO") || nameUp.includes("HEMOCULTIVO") || nameUp.includes("CULTIVO")) {
+                            let tipoMuestra = "", microorganismo = "", recuento = "";
+                            const antibiogramaEntries = [];
+                            const notasFinales = [];
+                            let blee = "";
+
+                            m.lines.forEach(l => {
+                                const lTrim = l.trim();
+                                const lUp = lTrim.toUpperCase();
+                                // Las líneas con campos nombrados vienen como "Label: valor"
+                                // Las líneas de antibiótico vienen como "ABX\tMIC\tINTERPR"
+                                const parts = lTrim.includes("\t") 
+                                    ? lTrim.split("\t").map(p => p.trim()).filter(p => p)
+                                    : lTrim.split(/:\s+(.+)/).filter(p => p.trim()); // split en primer ":"
+
+                                const firstPartUp = (parts[0] || "").toUpperCase();
+
+                                if (firstPartUp.startsWith("TIPO MUESTRA") || firstPartUp.startsWith("TIPO DE MUESTRA")) {
+                                    tipoMuestra = parts.slice(1).join(" ").trim();
+                                    return;
+                                }
+                                if (firstPartUp.startsWith("MICROORGANISMO")) {
+                                    microorganismo = parts.slice(1).join(" ").trim();
+                                    return;
+                                }
+                                if (firstPartUp.startsWith("RECUENTO")) {
+                                    recuento = parts.slice(1).join(" ").trim();
+                                    return;
+                                }
+                                if (firstPartUp.startsWith("BLEE")) {
+                                    blee = lTrim;
+                                    return;
+                                }
+                                // Líneas de nota final (empiezan con número seguido de texto largo)
+                                if (/^\d+\s+[A-Za-z]/.test(lTrim) && lTrim.length > 30) {
+                                    notasFinales.push(lTrim);
+                                    return;
+                                }
+                                // Línea de antibiótico: partes[0]=nombre, partes[1]=MIC, partes[2]=interpretación
+                                if (parts.length >= 3) {
+                                    const abx = parts[0];
+                                    const micRaw = parts[1];
+                                    const interpr = parts[2];
+                                    if (interpr && (interpr.toLowerCase().includes("sensible") || interpr.toLowerCase().includes("resistente") || interpr.toLowerCase().includes("intermedio"))) {
+                                        const micClean = micRaw.replace(/>=/g, ">").replace(/<=/g, "<");
+                                        const isResistente = interpr.toLowerCase().includes("resistente") || interpr.toLowerCase().includes("intermedio");
+                                        const asterisk = isResistente ? "*" : "";
+                                        antibiogramaEntries.push(`${abx} ${micClean} ${interpr}${asterisk}`);
+                                    }
+                                }
+                            });
+
+                            let microBlock = `${m.name.toUpperCase()}:\n`;
+                            if (tipoMuestra) microBlock += `Tipo Muestra ${tipoMuestra}\n`;
+                            if (microorganismo) microBlock += `Microorganismo ${microorganismo}\n`;
+                            if (recuento) microBlock += `Recuento ${recuento}\n`;
+                            if (antibiogramaEntries.length > 0) microBlock += antibiogramaEntries.join(", ") + "\n";
+                            if (blee) microBlock += `${blee}\n`;
+                            notasFinales.forEach(n => { microBlock += `${n}\n`; });
+                            dayLines.push(microBlock.trimEnd());
+                        } else {
+                            // Formato genérico para otros cultivos/micro
+                            let microBlock = `${m.name.toUpperCase()}:\n`;
+                            microBlock += m.lines.map(l => `  ${l}`).join('\n');
+                            dayLines.push(microBlock);
+                        }
+                    });
+                }
+
+                // FROTIS DE SANGRE PERIFÉRICA: al final, con línea en blanco antes, sin modificar ninguna línea
+                if (day.frotis && day.frotis.length > 0) {
+                    day.frotis.forEach(bloque => {
+                        dayLines.push("\nFROTIS DE SANGRE PERIFÉRICA:\n" + bloque.join('\n'));
+                    });
+                }
+
+                // FIX: Solo si hubo contenido real se imprime la fecha. Adiós fechas vacías fantasma.
+                if (dayLines.length > 0) {
+                    output += `${date}\n${dayLines.join('\n')}\n\n`;
+                }
+
+                if (day.especiales && day.especiales.length > 0) {
+                    day.especiales.forEach(e => {
+                        output += `${date}\n${e.label}${e.date ? ' ('+e.date+')' : ''}:\n${e.summary}\n\n`;
+                    });
+                }
+            });
+
+            document.getElementById('output-text').value = output.trim();
+            showToast("Procesado con éxito");
+        }
+    </script>
+</body>
+</html>
